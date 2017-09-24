@@ -47,6 +47,11 @@ char* toBytes(char* start, int size) {
 }
 
 void roundFunc(char** RE,char ** LE, char* roundKey) {
+    printf("\nRound start RE");
+    printChars(*RE,8);
+    printf("\nRound start LE");
+    printChars(*LE,8);
+
     char* temp = malloc(8*(sizeof(char)));
     //XOR step
     for(int i =0; i<8; i++) {
@@ -75,6 +80,10 @@ void roundFunc(char** RE,char ** LE, char* roundKey) {
     char* temp3 = *LE;
     *LE = *RE;
     *RE = temp3;
+    printf("\nRound end RE");
+    printChars(*RE,8);
+    printf("\nRound end LE");
+    printChars(*LE,8);
     //cleanup
     free(temp);
 }
@@ -157,12 +166,21 @@ char* keyGen (char fullKey[], int roundNumber) {
     }
     return roundKey;
 }
+void printRaw(char* a, int size) {
+    printf("\n");
+    for(int i=0; i<size; i++) {
+        printf("%c", *(a+i));
+    }
+    fflush(stdout);
+}
 
 void printChars(char* a, int size) {
-    printf("\n");
+
     for(int i=0; i<size; i++) {
         printf("%x", *(a+i));
     }
+    printf("\n");
+    fflush(stdout);
 }
 
 void blockFunc(char key[], char block[], bool encrypt) {
@@ -208,9 +226,11 @@ int main(int argc, char** argv) {
 //    //pthread_t* myThreads = malloc(blocks * sizeof(pthread_t));
     char* charKey = malloc(16*sizeof(char));
     for(int i =2; i<18; i++) {
-        charKey[i-2]= (argv+2)[i];
+        charKey[i-2]= (*((*(argv+2))+19-i));
     }
+    printRaw(charKey,16);
     char* byteKey = toBytes(charKey, 16);
+    printChars(byteKey,16);
     for(int i=0; i<blocks; i++) {
         calls[i].key = byteKey;
         calls[i].encrypt = *((*(argv+1))+1)=='e';
@@ -237,13 +257,7 @@ int main(int argc, char** argv) {
     printf("0x");
     for(int j=0; j<blocks; j++) {
         //pthread_join(myThreads[j],NULL);
-        for(int k =0; k<16; k++){
-            if(*(calls[j].block+k)<0xA) {
-                printf("%c", (*(calls[j].block+k) +'0'));
-            } else {
-                printf("%c", (*(calls[j].block+k) +'A'));
-            }
-        }
+        printChars(calls[j].block, 16);
         free(calls[j].block);
     }
     free(calls);
