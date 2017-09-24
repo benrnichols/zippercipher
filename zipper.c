@@ -22,7 +22,7 @@ struct passstruct {
     bool encrypt;
 };
 
-int arrSize(char* arr) {
+int arrSize(char arr[]) {
     int i =0;
     while(*arr != '\0') {
         arr  = arr +1;
@@ -79,7 +79,7 @@ void roundFunc(char** RE,char ** LE, char* roundKey) {
     free(temp);
 }
 
-char* keyGen (char* fullKey, int roundNumber) {
+char* keyGen (char fullKey[], int roundNumber) {
     char* roundKey = malloc(8 *(sizeof(char)));
     switch(roundNumber) {
         case 1:
@@ -158,8 +158,14 @@ char* keyGen (char* fullKey, int roundNumber) {
     return roundKey;
 }
 
+void printChars(char* a, int size) {
+    printf("\n");
+    for(int i=0; i<size; i++) {
+        printf("%x", *(a+i));
+    }
+}
 
-void blockFunc(char* key, char* block, bool encrypt) {
+void blockFunc(char key[], char block[], bool encrypt) {
     char* LE = malloc(8*sizeof(char));
     char* RE = malloc(8*sizeof(char));
     for(int j = 0; j<8; j++) {
@@ -168,6 +174,7 @@ void blockFunc(char* key, char* block, bool encrypt) {
     }
     for(int i=0; i<9; i++) {
         char* roundKey = keyGen(key, i+1);
+        printChars(roundKey, 8);
         roundFunc(&RE, &LE, roundKey);
         free(roundKey);
     }
@@ -199,11 +206,15 @@ int main(int argc, char** argv) {
     int blocks = digits /16 +(digits%16==0?0:1);
     blockinfo* calls = malloc(blocks* sizeof(blockinfo));
 //    //pthread_t* myThreads = malloc(blocks * sizeof(pthread_t));
-
+    char* charKey = malloc(16*sizeof(char));
+    for(int i =2; i<18; i++) {
+        charKey[i-2]= (argv+2)[i];
+    }
+    char* byteKey = toBytes(charKey, 16);
     for(int i=0; i<blocks; i++) {
-        calls[i].key = *(argv+2);
+        calls[i].key = byteKey;
         calls[i].encrypt = *((*(argv+1))+1)=='e';
-        if(i!=blocks-1) {
+        if(i!=blocks-1 || digits%16==0) {
             calls[i].block = toBytes((*(argv + 3)) + 16 * i+2, 16);
         } else {
             calls[i].block = malloc(16* sizeof(char));
@@ -220,13 +231,13 @@ int main(int argc, char** argv) {
             }
         }
        // pthread_create(myThreads+i, NULL, asyncBlock,(void*) calls+i);
-       blockFunc(calls[i].key,calls[i].block,calls[i].encrypt);
+        printChars(calls[i].block, 16);
+        blockFunc(calls[i].key,calls[i].block,calls[i].encrypt);
     }
     printf("0x");
     for(int j=0; j<blocks; j++) {
         //pthread_join(myThreads[j],NULL);
-        for(int k =0; k<16; k++) {
-            char temp;
+        for(int k =0; k<16; k++){
             if(*(calls[j].block+k)<0xA) {
                 printf("%c", (*(calls[j].block+k) +'0'));
             } else {
